@@ -1,35 +1,38 @@
-# 大文件 / 临时文件
+# ── 大文件 / 临时文件 ──
 *.pdf
 *.jpg
 *.jpeg
 *.png
 *.jsonl
-
-# API tokens 和密钥（不在文件里写，用环境变量）
-.env
 *.key
 
-# OCR 原始输出（可重新生成）
-books/*/ocr/doc_*.md
-books/*/ocr/images/
-books/*/ocr/_result.jsonl
-books/*/ocr/full_raw.md
+# ── API 密钥 ──
+.env
 
-# Python 缓存
-__pycache__/
-*.pyc
-
-# macOS
-.DS_Store
-
-# 逐页翻译结果（v1 产物，可重新生成）
-books/*/translated/page_*.md
-
-# 章节翻译结果代码不跟踪具体内容（仅跟踪目录结构示例）
-books/*/translated/chapters/
-
-# checkpoints 等
+# ── 流水线中间数据（可重新生成） ──
+books/*/stages/
+!books/*/stages/*/keep
+books/*/ocr/
+books/*/translated/
+books/*/proofread/suggestions.json
 books/*/untranslated_report.json
 
-# EPUB 输出（太大，可重新构建）
+# ── 逐页翻译产物（v1，已废弃） ──
+books/*/translated/page_*.md
+books/*/translated/chapters/
+
+# ── Python ──
+__pycache__/
+*.pyc
+*.pyo
+
+# ── macOS ──
+.DS_Store
+
+# ── EPUB 输出（太大，可重建） ──
 output/*.epub
+!output/.gitkeep
+
+# ── 构建临时文件 ──
+tmp/
+/tmp/

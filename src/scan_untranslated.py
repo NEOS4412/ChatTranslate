@@ -12,8 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import requests
 import sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _config import DEEPSEEK_API_URL, DEEPSEEK_MODEL
+from src.config import DEEPSEEK_API_URL, DEEPSEEK_MODEL
 
 CONCURRENCY = 10
 MAX_RETRIES = 2
@@ -127,7 +126,7 @@ def main():
     if not key:
         sys.exit("ERROR: DEEPSEEK_API_KEY not set")
 
-    chap_dir = a.book / "chapters"
+    chap_dir = a.book / "final"
     files = sorted(chap_dir.glob("ch_*.md"))
     if not files:
         sys.exit(f"ERROR: no ch_*.md in {chap_dir}")
@@ -168,9 +167,3 @@ def main():
 
     if a.fix and bad:
         fix_translations(bad, chap_dir)
-
-
-
-if __name__ == "__main__":
-    main()
-

@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "yishu-translate"
+version = "0.2.0"
+description = "外文PDF转中文EPUB翻译流水线"
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.31",
+]
+
+[project.scripts]
+yt-ocr = "scripts.run_ocr:main"
+yt-translate = "scripts.run_translate:main"
+yt-clean = "scripts.run_clean:main"
+yt-merge = "scripts.run_merge:main"
+yt-split = "scripts.run_split:main"
+yt-scan = "scripts.run_scan:main"
+yt-epub = "scripts.run_epub:main"

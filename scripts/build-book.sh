@@ -26,16 +26,16 @@ if [[ ! -f "$COVER" ]] && command -v pdftoppm >/dev/null; then
 fi
 
 echo "==> [1/5] OCR ($LANG)"
-python3 bin/ocr_paddle.py "$PDF" "$BOOK" --lang "$LANG" --resume
+python3 scripts/run-ocr.py "$PDF" "$BOOK" --lang "$LANG" --resume
 
 echo "==> [2/5] Translate"
-python3 bin/translate.py "$BOOK" --src-lang "$LANG" --resume
+python3 scripts/run-translate.py "$BOOK" --src-lang "$LANG" --resume
 
 echo "==> [3/5] Clean + merge"
-python3 bin/clean_md.py "$BOOK" --titles --superscripts
+python3 scripts/run-clean.py "$BOOK" --titles --superscripts
 
 echo "==> [4/5] Proofread"
-python3 bin/proofread.py "$BOOK"
+python3 scripts/run-proofread.py "$BOOK"
 
 echo "==> [5/5] Crowbook -> epub"
-bash bin/crowbook_build.sh "$BOOK"
+bash scripts/build-book.sh "$BOOK"

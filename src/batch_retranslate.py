@@ -10,8 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import requests
 import sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _config import DEEPSEEK_API_URL, DEEPSEEK_MODEL
+from src.config import DEEPSEEK_API_URL, DEEPSEEK_MODEL
 
 
 MAX_RETRIES = 3
@@ -180,17 +179,3 @@ def scan_and_retranslate(book_dir: Path, src_lang: str, threshold: float = 0.5, 
 
     print(f"\n📊 完成：{success}/{len(pages_to_fix)} 页重新翻译成功")
     return pages_to_fix
-
-
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description="批量重翻低质量翻译页")
-    parser.add_argument("book", type=Path, help="书籍目录路径")
-    parser.add_argument("--src-lang", choices=["en", "fr"], default="fr", help="原文语言")
-    parser.add_argument("--threshold", type=float, default=0.5, help="中文占比阈值，低于此值重新翻译")
-    parser.add_argument("--dry-run", action="store_true", help="仅扫描不翻译")
-    parser.add_argument("--workers", type=int, default=CONCURRENCY, help="并发数")
-    args = parser.parse_args()
-
-    CONCURRENCY = args.workers
-    scan_and_retranslate(args.book, args.src_lang, args.threshold, args.dry_run)

@@ -1,0 +1,12 @@
+title: "Le Droit à la Ville I"
+title_zh: "城市权利 I"
+author: "Henri Lefebvre"
+author_zh: "昂利·列斐伏尔"
+language: fr
+target_language: zh-CN
+isbn: 978-2-7071-4679-4
+publisher: "Éditions La Découverte"
+year: 2009
+notes: "列斐伏尔城市权利理论的经典著作。PaddleOCR 识别+DeepSeek翻译。"
+ocr_model: "PaddleOCR-VL-1.6"
+translate_model: "deepseek-v4-flash"
