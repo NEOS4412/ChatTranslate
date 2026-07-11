@@ -47,7 +47,7 @@ def call_llm(messages: list, key: str) -> str:
                       "temperature": 0.3,
                       "max_tokens": MAX_TOKENS,
                       "reasoning_effort": "low"},
-                timeout=300)
+                timeout=DEFAULT_API_TIMEOUT)
             r.raise_for_status()
             return r.json()["choices"][0]["message"]["content"]
         except Exception as e:

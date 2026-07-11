@@ -11,7 +11,7 @@
   python3 bin/translate.py books/<书名> --src-lang fr
 """
 from __future__ import annotations
-import argparse, json, os, re, sys, time
+import argparse, json, os, re, sys, time, tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import requests
@@ -46,16 +46,16 @@ USER_TEMPLATE = """【术语表】
 """
 
 
-def call_llm(messages: list, key: str) -> str:
+def call_llm(messages: list, key: str, max_tokens: int = MAX_TOKENS) -> str:
     for i in range(1, MAX_RETRIES + 1):
         try:
             r = requests.post(DEEPSEEK_API_URL,
                 headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
                 json={"model": DEEPSEEK_MODEL, "messages": messages,
                       "temperature": 0.3,
-                      "max_tokens": MAX_TOKENS,
+                      "max_tokens": max_tokens,
                       "reasoning_effort": "low"},
-                timeout=300)
+                timeout=DEFAULT_API_TIMEOUT)
             r.raise_for_status()
             return r.json()["choices"][0]["message"]["content"]
         except Exception as e:
@@ -63,6 +63,14 @@ def call_llm(messages: list, key: str) -> str:
             if i == MAX_RETRIES:
                 raise
             time.sleep(3 * i)
+
+
+def atomic_write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as tmp:
+        tmp.write(text)
+        tmp_path = Path(tmp.name)
+    tmp_path.replace(path)
 
 
 def build_glossary(book: Path, src_lang: str) -> dict:
@@ -85,7 +93,7 @@ def build_glossary(book: Path, src_lang: str) -> dict:
     m = re.search(r"\{.*\}", out, re.S)
     glossary = json.loads(m.group()) if m else {}
     cache.parent.mkdir(parents=True, exist_ok=True)
-    cache.write_text(json.dumps(glossary, ensure_ascii=False, indent=2), encoding="utf-8")
+    atomic_write_text(cache, json.dumps(glossary, ensure_ascii=False, indent=2))
     print(f"[glossary] {len(glossary)} terms")
     return glossary
 
@@ -134,7 +142,7 @@ def split_into_chapters(raw_path: Path) -> list[dict]:
     return chapters
 
 
-def translate_chapter(chapter: dict, glossary: dict, key: str) -> str:
+def translate_chapter(chapter: dict, glossary: dict, key: str, max_tokens: int = MAX_TOKENS) -> str:
     gloss_str = "\n".join(f"{k} -> {v}" for k, v in glossary.items()) or "（暂无）"
     msgs = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -144,14 +152,15 @@ def translate_chapter(chapter: dict, glossary: dict, key: str) -> str:
              ch_label=f"#{chapter['idx']}: {chapter['title']}",
              source=chapter['body'])},
     ]
-    result = call_llm(msgs, key)
+    result = call_llm(msgs, key, max_tokens=max_tokens)
     title_line = f"# {chapter['title']}"
     if title_line not in result:
         result = f"{title_line}\n\n{result}"
     return result
 
 
-def run(book: Path, src_lang: str, resume: bool) -> None:
+def run(book: Path, src_lang: str, resume: bool, workers: int = CONCURRENCY,
+        max_tokens: int = MAX_TOKENS) -> None:
     key = os.environ.get("DEEPSEEK_API_KEY")
     if not key:
         sys.exit("ERROR: DEEPSEEK_API_KEY not set")
@@ -182,12 +191,13 @@ def run(book: Path, src_lang: str, resume: bool) -> None:
         todo.append(ch)
 
     def task(ch: dict) -> tuple[int, int]:
-        result = translate_chapter(ch, glossary, key)
-        ch['path'].write_text(result, encoding="utf-8")
+        result = translate_chapter(ch, glossary, key, max_tokens=max_tokens)
+        atomic_write_text(ch['path'], result)
         return ch['idx'], len(result)
 
     done = 0
-    with ThreadPoolExecutor(max_workers=CONCURRENCY) as ex:
+    failed = []
+    with ThreadPoolExecutor(max_workers=workers) as ex:
         futs = {ex.submit(task, ch): ch for ch in todo}
         for fut in as_completed(futs):
             try:
@@ -198,8 +208,12 @@ def run(book: Path, src_lang: str, resume: bool) -> None:
             except Exception as e:
                 ch = futs[fut]
                 print(f"  ❌ ch_{ch['idx']:03d}: {e}")
+                failed.append(ch)
 
     print(f"\n📊 完成: {done}/{len(todo)} → {out_dir}")
+    if failed:
+        failed_labels = ", ".join(f"ch_{ch['idx']:03d}" for ch in failed)
+        raise SystemExit(f"ERROR: translation failed for {len(failed)} chapters: {failed_labels}")
     if done > 0:
         print(f"💡 下一步: python3 bin/clean_md.py {book} --titles")
 

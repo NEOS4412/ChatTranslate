@@ -5,21 +5,24 @@
 ## 快速开始
 
 ```bash
-# 1. 配置 API 密钥
+# 1. 安装为本地 CLI（推荐）
+python3 -m pip install -e .
+
+# 2. 配置 API 密钥
 export DEEPSEEK_API_KEY="sk-..."
 export PADDLEOCR_TOKEN="..."
 
-# 2. 一键跑通
-bash scripts/build-book.sh books/城市权利-列斐伏尔 books/_inbox/原著.pdf --lang fr
+# 3. 一键跑通；中断后显式加 --resume
+bash scripts/build-book.sh books/城市权利-列斐伏尔 books/_inbox/原著.pdf --lang fr --resume
 
 # 或分步执行：
-python3 scripts/run-ocr.py books/_inbox/xxx.pdf books/城市权利-列斐伏尔 --lang fr
-python3 scripts/run-translate.py books/城市权利-列斐伏尔 --src-lang fr
-python3 scripts/run-clean.py books/城市权利-列斐伏尔 --titles
-python3 scripts/run-merge.py books/城市权利-列斐伏尔
-python3 scripts/run-split.py books/城市权利-列斐伏尔 --front 8 --protect
-bash scripts/build-book.sh books/城市权利-列斐伏尔
-python3 scripts/run-scan.py books/城市权利-列斐伏尔 --workers 10
+yt-ocr books/_inbox/xxx.pdf books/城市权利-列斐伏尔 --lang fr
+yt-translate books/城市权利-列斐伏尔 --src-lang fr --workers 5 --max-tokens 8000
+yt-clean books/城市权利-列斐伏尔 --titles
+yt-merge books/城市权利-列斐伏尔
+yt-split books/城市权利-列斐伏尔 --front 8 --protect
+yt-scan books/城市权利-列斐伏尔 --workers 10 --fail-on error
+yt-epub books/城市权利-列斐伏尔
 ```
 
 ## 项目结构
@@ -34,14 +37,13 @@ python3 scripts/run-scan.py books/城市权利-列斐伏尔 --workers 10
 │   ├── split.py           # 按标题切分章节
 │   ├── proofread.py       # AI 全文校对
 │   ├── scan.py            # 最终质量扫描 + 自动修复
-│   └── epub.py            # EPUB 构建（crowbook 封装）
+│
+├── scripts/run_epub.py     # EPUB 构建（crowbook 封装）
 │
 ├── scripts/                # CLI 入口（薄层，委托 src/）
-│   ├── run-ocr.py
-│   ├── run-translate.py
+│   ├── run_ocr.py
+│   ├── run_translate.py
 │   └── build-book.sh      # 一键流水线
-│
-├── bin/                    # 向后兼容的包装器
 │
 ├── books/
 │   ├── _inbox/            # 待处理 PDF
@@ -78,6 +80,20 @@ python3 scripts/run-scan.py books/城市权利-列斐伏尔 --workers 10
 - **断点续传**：所有脚本支持 `--resume`，中断后从上次进度继续
 - **并行翻译**：默认 5 线程并发，`--workers N` 调整
 - **术语表**：首跑时 AI 自动抽取术语 → `_glossary.json`，全书复用
+- **失败即失败**：翻译任一章节失败时进程返回非 0，避免半成品继续流入 EPUB
+- **发布门禁**：`yt-scan --fail-on error` 会拦截页码残留、未翻译段、提示词残留等硬错误
+
+## 生产约束
+
+- 入口只维护一套真实逻辑：`scripts/run_*.py`；`scripts/run-*.py` 连字符版已在本版本中删除。
+- 构建 EPUB 只走 `yt-epub` / `scripts/run_epub.py`，一键流水线不再递归调用自身。
+- `bin/` 目录已在本版本中移除；所有入口统一为 `yt-*` CLI（见 pyproject.toml `[project.scripts]`）。
+- 发布前必须运行：
+
+```bash
+yt-scan books/<书名> --fail-on error
+yt-verify-epub books/<书名>
+```
 
 ## 已知局限
 

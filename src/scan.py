@@ -136,6 +136,26 @@ def check_superscript_chars(text: str) -> list[dict]:
         })
     return issues
 
+
+def check_prompt_residue(text: str) -> list[dict]:
+    """检查 LLM 提示词/中间处理标记是否泄漏到成品。"""
+    patterns = [
+        r"【原文段落\s*#?\d*】",
+        r"【待校对文本",
+        r"【术语表】",
+        r"<think>.*?</think>",
+    ]
+    issues = []
+    for pattern in patterns:
+        for m in re.finditer(pattern, text, re.S):
+            issues.append({
+                "line": text[:m.start()].count('\n') + 1,
+                "type": "prompt_residue",
+                "content": m.group()[:120],
+                "severity": "error"
+            })
+    return issues
+
 def scan_file(filepath: Path, src_lang: str = "fr") -> dict:
     """对单个文件运行所有检测"""
     text = filepath.read_text(encoding="utf-8")
@@ -146,6 +166,7 @@ def scan_file(filepath: Path, src_lang: str = "fr") -> dict:
     all_issues.extend(check_broken_paragraphs(text))
     all_issues.extend(check_html_residue(text))
     all_issues.extend(check_superscript_chars(text))
+    all_issues.extend(check_prompt_residue(text))
     return {"file": str(filepath.name), "issues": all_issues, "chars": len(text)}
 
 

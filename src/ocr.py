@@ -24,7 +24,7 @@ def post_job(pdf: Path, token: str) -> str:
         "useChartRecognition": False,
     })}
     with pdf.open("rb") as f:
-        r = requests.post(JOB_URL, headers=h, data=data, files={"file": f})
+        r = requests.post(JOB_URL, headers=h, data=data, files={"file": f}, timeout=DEFAULT_API_TIMEOUT)
     r.raise_for_status()
     return r.json()["data"]["jobId"]
 
@@ -32,7 +32,7 @@ def post_job(pdf: Path, token: str) -> str:
 def poll(job_id: str, token: str) -> str:
     h = {"Authorization": f"bearer {token}"}
     while True:
-        r = requests.get(f"{JOB_URL}/{job_id}", headers=h)
+        r = requests.get(f"{JOB_URL}/{job_id}", headers=h, timeout=60)
         r.raise_for_status()
         st = r.json()["data"]["state"]
         if st == "running":
@@ -55,11 +55,15 @@ def save_pages(pages, ocr_dir: Path, img_dir: Path, skip: bool) -> int:
             md.write_text(res["markdown"]["text"], encoding="utf-8")
             for p, url in res["markdown"]["images"].items():
                 d = img_dir / p; d.parent.mkdir(parents=True, exist_ok=True)
-                d.write_bytes(requests.get(url).content)
+                rsp = requests.get(url, timeout=120)
+                rsp.raise_for_status()
+                d.write_bytes(rsp.content)
             for name, url in res["outputImages"].items():
                 d = img_dir / f"{name}_{n}.jpg"
                 if d.exists() and skip: continue
-                d.write_bytes(requests.get(url).content)
+                rsp = requests.get(url, timeout=120)
+                rsp.raise_for_status()
+                d.write_bytes(rsp.content)
             saved += 1; n += 1
     return saved
 
@@ -98,7 +102,9 @@ def run(pdf: Path, book: Path, resume: bool) -> None:
             if i == MAX_RETRIES: raise
             time.sleep(5)
     url = poll(jid, tok)
-    pages = [json.loads(l) for l in requests.get(url).text.splitlines() if l.strip()]
+    rsp = requests.get(url, timeout=DEFAULT_API_TIMEOUT)
+    rsp.raise_for_status()
+    pages = [json.loads(l) for l in rsp.text.splitlines() if l.strip()]
     (ocr / "_result.jsonl").write_text(
         "\n".join(json.dumps(p, ensure_ascii=False) for p in pages), encoding="utf-8")
     s = save_pages(pages, ocr, imgs, skip=resume)

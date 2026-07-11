@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=68.0"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "yishu-translate"
@@ -11,11 +11,22 @@ dependencies = [
     "requests>=2.31",
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0",
+]
+
 [project.scripts]
-yt-ocr = "scripts.run_ocr:main"
-yt-translate = "scripts.run_translate:main"
-yt-clean = "scripts.run_clean:main"
-yt-merge = "scripts.run_merge:main"
-yt-split = "scripts.run_split:main"
-yt-scan = "scripts.run_scan:main"
-yt-epub = "scripts.run_epub:main"
+yt-ocr                 = "scripts.run_ocr:main"
+yt-translate           = "scripts.run_translate:main"
+yt-clean               = "scripts.run_clean:main"
+yt-merge               = "scripts.run_merge:main"
+yt-split               = "scripts.run_split:main"
+yt-scan                = "scripts.run_scan:main"
+yt-proofread           = "scripts.run_proofread:main"
+yt-epub                = "scripts.run_epub:main"
+yt-batch-retranslate   = "scripts.run_batch_retranslate:main"
+yt-verify-epub         = "scripts.run_verify_epub:main"
+
+[tool.setuptools.packages.find]
+include = ["src", "scripts"]

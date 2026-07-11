@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """CLI: Build EPUB via crowbook."""
-import sys, os, subprocess, tempfile
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from __future__ import annotations
+
+import argparse
+import os
+import subprocess
+import tempfile
 from pathlib import Path
 
-def build(book_dir: Path):
-    """Build EPUB from a book directory (方案 A: single file)."""
+
+def build(book_dir: Path) -> bool:
+    """Build EPUB from proofread/full_zh.md."""
     proof = book_dir / "proofread" / "full_zh.md"
     if not proof.exists():
         print(f"ERROR: {proof} not found")
@@ -32,30 +37,35 @@ def build(book_dir: Path):
     safe = dir_name.replace("/", "_").replace("\\", "_")
     epub_path = out_dir / f"{safe}.epub"
 
-    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False)
-    with open(proof) as f:
-        content = f.read()
-    tmp.write(f"---\nauthor: {author}\ntitle: {title}\nlang: zh-CN\n"
-              f"output: [epub]\nepub.version: 3\n"
-              f"resources.base_path: {book_dir.resolve()}\n"
-              + (f"cover: {cover.resolve()}\n" if cover.exists() else "")
-              + "---\n\n" + content)
-    tmp.flush()
+    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False, encoding="utf-8")
     try:
-        subprocess.run(["crowbook", "-s", tmp.name,
-                        "--set", f"output.epub={epub_path.resolve()}"], check=True)
+        content = proof.read_text(encoding="utf-8")
+        tmp.write(
+            f"---\nauthor: {author}\ntitle: {title}\nlang: zh-CN\n"
+            f"output: [epub]\nepub.version: 3\n"
+            f"resources.base_path: {book_dir.resolve()}\n"
+            + (f"cover: {cover.resolve()}\n" if cover.exists() else "")
+            + "---\n\n"
+            + content
+        )
+        tmp.flush()
+        subprocess.run(["crowbook", "-s", tmp.name, "--set", f"output.epub={epub_path.resolve()}"], check=True)
         print(f"[done] {epub_path}")
         return True
-    except (subprocess.CalledProcessError, FileNotFoundError) as e:
-        print(f"ERROR: crowbook failed: {e}")
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        print(f"ERROR: crowbook failed: {exc}")
         return False
     finally:
         tmp.close()
         os.unlink(tmp.name)
 
-if __name__ == "__main__":
-    import argparse
+
+def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("book", type=Path, help="书籍目录路径")
-    a = ap.parse_args()
-    sys.exit(0 if build(a.book) else 1)
+    args = ap.parse_args()
+    return 0 if build(args.book) else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

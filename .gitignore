@@ -36,3 +36,7 @@ output/*.epub
 # ── 构建临时文件 ──
 tmp/
 /tmp/
+
+# ── Build / Test ──
+.pytest_cache/
+*.egg-info/
