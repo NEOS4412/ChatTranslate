@@ -26,6 +26,9 @@ RULES = [
     (re.compile(r"\[\[\^(\w[-\w]*)\]\]"), r"[^\1]"),
     # 3.1 删除页分隔符 <!-- page:N -->
     (re.compile(r"<!--\s*page:\s*\d+\s*-->\n?"), ""),
+    # 3.1.1 LLM 未脱壳的 prompt 标签（行级），例如 【原文段落 #245】
+    (re.compile(r"^【原文段落\s*#?\d*】\s*\n", re.M), ""),
+    (re.compile(r"<!--\s*page:\s*\d+\s*-->\n?"), ""),
     # 3.2 LaTeX 残留 $ ^{X} $ -> X（带或不带空格）
     (re.compile(r"\$\s*\^\{([a-zA-Z]+)\}\s*\$"), r"\1"),
     (re.compile(r"\$\^\{([a-zA-Z]+)\}\$"), r"\1"),
