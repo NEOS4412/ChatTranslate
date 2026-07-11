@@ -1,0 +1,40 @@
+author: Henri Lefebvre
+epub.css: style.css
+title: Le Droit A La Ville I
+lang: zh-CN
+cover: cover.jpg
+output.base_path: ../..
+output.epub: output/Le_Droit_A_La_Ville_I_Henri_Lefebvre.epub
+epub.version: 3
+
+# 前置
+! chapters/ch_000_front.md
+
+# 正文章节
++ chapters/ch_008.md
++ chapters/ch_009.md
++ chapters/ch_010.md
++ chapters/ch_011.md
++ chapters/ch_012.md
++ chapters/ch_013.md
++ chapters/ch_014.md
++ chapters/ch_015.md
++ chapters/ch_016.md
++ chapters/ch_017.md
++ chapters/ch_018.md
++ chapters/ch_019.md
++ chapters/ch_020.md
++ chapters/ch_021.md
++ chapters/ch_022.md
++ chapters/ch_023.md
++ chapters/ch_025.md
++ chapters/ch_026.md
++ chapters/ch_027.md
++ chapters/ch_028.md
++ chapters/ch_029.md
++ chapters/ch_030.md
++ chapters/ch_031.md
++ chapters/ch_032.md
++ chapters/ch_033.md
+
+
